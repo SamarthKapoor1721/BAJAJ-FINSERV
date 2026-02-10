@@ -40,20 +40,27 @@ function findLCM(arr) {
   return arr.reduce((a, b) => lcm(a, b));
 }
 
+/* ---------- UPDATED AI FUNCTION ---------- */
 async function getAIResponse(question) {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_KEY}`;
+
     const response = await axios.post(url, {
       contents: [{ parts: [{ text: question }] }]
     });
+
     const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error();
-    return text.split(" ")[0];
-  } catch {
+
+    if (!text) throw new Error("Empty AI response");
+
+    return text.trim().split(/\s+/)[0];
+  } catch (err) {
+    console.error("Gemini Error:", err.response?.data || err.message);
     throw new Error("AI_ERROR");
   }
 }
 
+/* ---------- MAIN API ---------- */
 app.post("/bfhl", async (req, res) => {
   try {
     const keys = Object.keys(req.body);
@@ -109,6 +116,7 @@ app.post("/bfhl", async (req, res) => {
   }
 });
 
+/* ---------- HEALTH CHECK ---------- */
 app.get("/health", (req, res) => {
   res.status(200).json({
     is_success: true,
@@ -116,4 +124,5 @@ app.get("/health", (req, res) => {
   });
 });
 
+/* ---------- START SERVER ---------- */
 app.listen(process.env.PORT || 3000);
